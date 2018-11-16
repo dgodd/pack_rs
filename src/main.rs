@@ -71,22 +71,6 @@ impl Docker {
     pub fn images(&self) -> Result<Vec<Image>, Box<Error>> {
         let res = self.request(&"GET", &"/images/json")?;
         println!("STATUS: |{}|", res.status);
-
-        // let mut images = serde_json::from_reader(res.body).into_iter();
-        // let image: Option<Vec<Image>> = images.next();
-        // println!("IMAGE: {:?}", image);
-        // Ok(images)
-        // std::io::copy(&mut res.body, &mut std::io::stdout())?;
-        // io::stdout().write(b"|")?;
-
-        // let mut body = String::new();
-        // res.body.read_to_string(&mut body)?;
-        // let body2 = body.trim_end();
-        // println!("IMAGE: |{}|", body2);
-        // let image: Vec<Image> = serde_json::from_str(body2)?;
-        // println!("IMAGE: {:?}", image);
-        // Ok(vec![])
-
         let image: Vec<Image> = serde_json::from_reader(res.body)?;
         Ok(image)
     }
