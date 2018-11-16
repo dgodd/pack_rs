@@ -1,9 +1,9 @@
 #[macro_use]
 extern crate serde_derive;
 
+use std::error::Error;
 use std::io::{self, BufRead, BufReader, Read, Write};
 use std::os::unix::net::UnixStream;
-use std::error::{Error};
 
 #[cfg(unix)]
 pub const DEFAULT_DOCKER_HOST: &'static str = "unix:///var/run/docker.sock";
@@ -48,7 +48,10 @@ impl Docker {
 
     pub fn request(&self, method: &str, path: &str) -> Result<Response, Box<Error>> {
         let mut client = UnixStream::connect(&self.socket)?;
-        let buf = format!("{} {} HTTP/1.1\r\nConnection: close\r\nHost: {}\r\n\r\n", method, path, self.host_name);
+        let buf = format!(
+            "{} {} HTTP/1.1\r\nConnection: close\r\nHost: {}\r\n\r\n",
+            method, path, self.host_name
+        );
         client.write_all(buf.as_bytes())?;
 
         let mut r = BufReader::new(client);
@@ -65,13 +68,19 @@ impl Docker {
             // line.truncate(line.len() - 2);
             // println!("HEADER: {}", line);
         }
-        Ok(Response { status, body: Box::new(r) })
+        Ok(Response {
+            status,
+            body: Box::new(r),
+        })
     }
 
     pub fn images(&self) -> Result<Vec<Image>, Box<Error>> {
         let res = self.request(&"GET", &"/images/json")?;
         if res.status != 200 {
-            return Err(Box::new(io::Error::new(io::ErrorKind::Other, format!("Status: {} != 200", res.status))))
+            return Err(Box::new(io::Error::new(
+                io::ErrorKind::Other,
+                format!("Status: {} != 200", res.status),
+            )));
         }
         let image: Vec<Image> = serde_json::from_reader(res.body)?;
         Ok(image)
@@ -80,7 +89,10 @@ impl Docker {
     pub fn pull(&self, repo_name: &str) -> Result<(), Box<Error>> {
         let res = self.request(&"POST", &format!("/images/create?fromImage={}", repo_name))?;
         if res.status != 200 {
-            return Err(Box::new(io::Error::new(io::ErrorKind::Other, format!("Status: {} != 200", res.status))))
+            return Err(Box::new(io::Error::new(
+                io::ErrorKind::Other,
+                format!("Status: {} != 200", res.status),
+            )));
         }
 
         let mut r = BufReader::new(res.body);
@@ -93,11 +105,11 @@ impl Docker {
                 line.truncate(line.len() - 2);
             }
             if line == "" {
-                continue
+                continue;
             }
             let size = usize::from_str_radix(&line, 16)?;
             if size == 0 {
-                break
+                break;
             }
             body.resize(size, 0);
             r.read_exact(&mut body)?;
@@ -111,7 +123,6 @@ impl Docker {
         Ok(())
     }
 }
-
 
 fn main() -> Result<(), Box<Error>> {
     let docker = Docker::connect_with_defaults()?;
