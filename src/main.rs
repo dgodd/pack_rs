@@ -70,6 +70,38 @@ impl Docker {
         let images: Vec<Image> = serde_json::from_reader(res.body)?;
         Ok(images)
     }
+
+    pub fn pull(&self, repo_name: &str) -> Result<(), Box<Error>> {
+        let res = self.request(&"POST", &format!("/images/create?fromImage={}", repo_name))?;
+        println!("STATUS: |{}|", res.status);
+
+        let mut r = BufReader::new(res.body);
+        let mut line = String::new();
+        let mut body: Vec<u8> = Vec::new();
+        loop {
+            line.clear();
+            r.read_line(&mut line)?;
+            if line.len() >= 2 {
+                line.truncate(line.len() - 2);
+            }
+            if line == "" {
+                continue
+            }
+            let size = usize::from_str_radix(&line, 16)?;
+            if size == 0 {
+                break
+            }
+            body.resize(size, 0);
+            r.read_exact(&mut body)?;
+            if body.len() >= 2 {
+                body.truncate(body.len() - 2);
+            }
+            let body = String::from_utf8(body.to_vec())?;
+            println!("BODY: |{:?}|", &body);
+        }
+
+        Ok(())
+    }
 }
 
 
@@ -78,11 +110,8 @@ fn main() -> Result<(), Box<Error>> {
 
     println!("Images: {:?}", docker.images());
     println!("");
-
-    // let mut r = docker.request(&"GET", &"/images/json")?;
-    // let mut body: Vec<u8> = Vec::new();
-    // r.read_to_end(&mut body)?;
-    // println!("{}", String::from_utf8(body)?);
+    println!("Pull: redis");
+    docker.pull(&"redis:latest")?;
 
     Ok(())
 }
