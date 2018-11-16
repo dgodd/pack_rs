@@ -41,6 +41,10 @@ impl Docker {
         let host_name = "localhost".to_string();
         Ok(Docker { socket, host_name })
     }
+    #[cfg(not(unix))]
+    pub fn connect_with_unix(_addr: &str) -> Result<Docker, Box<Error>> {
+        panic!("not implemented")
+    }
 
     pub fn request(&self, method: &str, path: &str) -> Result<Response, Box<Error>> {
         let mut client = UnixStream::connect(&self.socket)?;
