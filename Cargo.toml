@@ -5,3 +5,12 @@ authors = ["Dave Goddard <dave@goddard.id.au>"]
 edition = "2018"
 
 [dependencies]
+serde_derive = "1.0"
+serde = "1.0"
+serde_json = "1.0"
+
+# [target.'cfg(unix)'.dependencies]
+# unix_socket = "0.5.0"
+
+# [target.'cfg(windows)'.dependencies]
+# named_pipe = "0.2.2"
