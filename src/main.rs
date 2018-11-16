@@ -1,9 +1,9 @@
 #[macro_use]
 extern crate serde_derive;
 
-use std::io::{BufRead, BufReader, Read, Write};
+use std::io::{self, BufRead, BufReader, Read, Write};
 use std::os::unix::net::UnixStream;
-use std::error::Error;
+use std::error::{Error};
 
 #[cfg(unix)]
 pub const DEFAULT_DOCKER_HOST: &'static str = "unix:///var/run/docker.sock";
@@ -70,14 +70,18 @@ impl Docker {
 
     pub fn images(&self) -> Result<Vec<Image>, Box<Error>> {
         let res = self.request(&"GET", &"/images/json")?;
-        println!("STATUS: |{}|", res.status);
+        if res.status != 200 {
+            return Err(Box::new(io::Error::new(io::ErrorKind::Other, format!("Status: {} != 200", res.status))))
+        }
         let image: Vec<Image> = serde_json::from_reader(res.body)?;
         Ok(image)
     }
 
     pub fn pull(&self, repo_name: &str) -> Result<(), Box<Error>> {
         let res = self.request(&"POST", &format!("/images/create?fromImage={}", repo_name))?;
-        println!("STATUS: |{}|", res.status);
+        if res.status != 200 {
+            return Err(Box::new(io::Error::new(io::ErrorKind::Other, format!("Status: {} != 200", res.status))))
+        }
 
         let mut r = BufReader::new(res.body);
         let mut line = String::new();
